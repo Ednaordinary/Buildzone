@@ -22,7 +22,7 @@ for part in rocket:
     part.fill("gray")
 
 stars = []
-for x in range((screen.get_width() * screen.get_height())/10000):
+for x in range(int((screen.get_width() * screen.get_height())/10000)):
     star_x = random.randint(0, screen.get_width())
     star_y = random.randint(0, screen.get_height())
     stars.append((star_x, star_y))
@@ -32,6 +32,15 @@ for x in range((screen.get_width() * screen.get_height())/10000):
 
 rot = 0
 rot_speed = 0.0
+background_offset = [0, 0]
+background_offset_speed = [0, 0]
+
+font = pygame.font.Font(pygame.font.match_font('arial'), 16)
+
+def apply_rot(x, y, rot):
+    x_new = (math.cos(rot * math.pi / 180) * x) + (math.sin(rot * math.pi / 180) * y)
+    y_new = (math.cos(rot * math.pi / 180) * y) + (math.sin(rot * math.pi / 180) * x)
+    return (x_new, y_new)
 
 while running:
     for event in pygame.event.get():
@@ -40,35 +49,61 @@ while running:
     screen.fill("black")
     #pygame.draw.rect(screen, "gray", [(screen.get_width() / 2) - 10, (screen.get_height() / 2) - 10, 20, 20])
     keys = pygame.key.get_pressed()
+    x_speed_add = 0
+    y_speed_add = 0
+    #TODO: diagnonal keys pressed should only add our "available thrust", not doubled
     if keys[pygame.K_e]:
         rot_speed -= 0.1 * (60/fps)
     if keys[pygame.K_q]:
         rot_speed += 0.1 * (60/fps)
+    if keys[pygame.K_w]:
+        x_speed_add += 0.1 * (60/fps)
+    if keys[pygame.K_s]:
+        x_speed_add -= 0.1 * (60 / fps)
+    if keys[pygame.K_a]:
+        y_speed_add += 0.1 * (60 / fps)
+    if keys[pygame.K_d]:
+        y_speed_add -= 0.1 * (60 / fps)
+    speed_add = apply_rot(x_speed_add, y_speed_add, rot)
+    background_offset_speed[0] += speed_add[0]
+    background_offset_speed[1] += speed_add[1]
+    background_offset[0] += background_offset_speed[0]
+    background_offset[1] += background_offset_speed[1]
     rot = (rot + rot_speed) % 360
     rocket_image = pygame.transform.rotate(rocket[0], rot)
     rect = rocket_image.get_rect()
     rect.center = (screen.get_width() // 2, screen.get_height() // 2)
     for star in stars:
         star_x = star[0]
-        star_y = star[0]
+        star_y = star[1]
+        star_y += background_offset[0]
+        star_x += background_offset[1]
         if star_x > screen.get_width():
             star_x_over = star_x / screen.get_width()
-            star_x_over = math.floor(star_x_over)
-            star_x = star_x - star_x_over
+            star_x_over = star_x_over - math.floor(star_x_over)
+            star_x = (star_x_over * screen.get_width())
         elif star_x < 0:
             star_x_over = star_x / screen.get_width()
-            star_x_over = math.floor(star_x_over)
-            star_x = star_x - star_x_over
+            star_x_over = star_x_over - math.floor(star_x_over)
+            star_x = (star_x_over * screen.get_width())
         if star_y > screen.get_width():
             star_y_over = star_y / screen.get_width()
-            star_y_over = math.floor(star_y_over)
-            star_y = star_y - star_x_over
+            star_y_over = star_y_over - math.floor(star_y_over)
+            star_y = (star_y_over * screen.get_width())
         elif star_y < 0:
             star_y_over = star_y / screen.get_width()
-            star_y_over = math.floor(star_y_over)
-            star_y = star_y - star_y_over
-        pygame.draw(screen, "white", (star_x, star_y), 3)
+            star_y_over = star_y_over - math.floor(star_y_over)
+            star_y = (star_y_over * screen.get_width())
+        pygame.draw.circle(screen, "white", (star_x, star_y), 3)
     screen.blit(rocket_image, rect)
+    position_stats = font.render("Position: x: " + str(int(background_offset[0])) + " y: " + str(int(background_offset[1])), True, "white")
+    position_stats_rect = position_stats.get_rect()
+    position_stats_rect.topleft = (0, 0)
+    screen.blit(position_stats, position_stats_rect)
+    rotation_stats = font.render("Rotation: " + str(int(rot)), True, "white")
+    rotation_stats_rect = rotation_stats.get_rect()
+    rotation_stats_rect.topleft = (0, 16)
+    screen.blit(rotation_stats, rotation_stats_rect)
     pygame.display.flip()
 
     clock.tick(fps)  # limits FPS to 60
