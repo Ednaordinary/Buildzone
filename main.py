@@ -19,7 +19,9 @@ rocket.append(pygame.Surface((30, 30)))
 
 for part in rocket:
     part.set_colorkey((0, 0, 0))
-    part.fill("gray")
+    pygame.draw.polygon(part, "gray",
+                        #((0, 10), (0, 20), (20, 20), (20, 30), (30, 15), (20, 0), (20, 10)))
+                        ((0, 15), (10, 15), (10, 30), (20, 30), (20, 15), (30, 15), (15, 0)))
 
 stars = []
 for x in range(int((screen.get_width() * screen.get_height())/10000)):
@@ -38,8 +40,8 @@ background_offset_speed = [0, 0]
 font = pygame.font.Font(pygame.font.match_font('arial'), 16)
 
 def apply_rot(x, y, rot):
-    x_new = (math.cos(rot * math.pi / 180) * x) + (math.sin(rot * math.pi / 180) * y)
-    y_new = (math.cos(rot * math.pi / 180) * y) + (math.sin(rot * math.pi / 180) * x)
+    x_new = ((math.cos(rot * math.pi / 180) * x) + (math.sin(rot * math.pi / 180) * y * -1))
+    y_new = ((math.cos(rot * math.pi / 180) * y) + (math.sin(rot * math.pi / 180) * x))
     return (x_new, y_new)
 
 while running:
@@ -52,18 +54,26 @@ while running:
     x_speed_add = 0
     y_speed_add = 0
     #TODO: diagnonal keys pressed should only add our "available thrust", not doubled
+    available_thrust = 0.1
+    thrust_derivative = 0
+    for i in [keys[pygame.K_w], keys[pygame.K_s], keys[pygame.K_a], keys[pygame.K_d]]:
+        thrust_derivative += 1
+    if not thrust_derivative == 0:
+        available_thrust = available_thrust / thrust_derivative
     if keys[pygame.K_e]:
-        rot_speed -= 0.1 * (60/fps)
+        rot_speed -= 0.05 * (60/fps)
     if keys[pygame.K_q]:
-        rot_speed += 0.1 * (60/fps)
+        rot_speed += 0.05 * (60/fps)
+    if keys[pygame.K_r]:
+        rot_speed -= 0.03 * (60/fps) * rot_speed
     if keys[pygame.K_w]:
-        x_speed_add += 0.1 * (60/fps)
+        x_speed_add += (60/fps) * available_thrust
     if keys[pygame.K_s]:
-        x_speed_add -= 0.1 * (60 / fps)
+        x_speed_add -= (60 / fps) * available_thrust
     if keys[pygame.K_a]:
-        y_speed_add += 0.1 * (60 / fps)
+        y_speed_add += (60 / fps) * available_thrust
     if keys[pygame.K_d]:
-        y_speed_add -= 0.1 * (60 / fps)
+        y_speed_add -= (60 / fps) * available_thrust
     speed_add = apply_rot(x_speed_add, y_speed_add, rot)
     background_offset_speed[0] += speed_add[0]
     background_offset_speed[1] += speed_add[1]
@@ -96,7 +106,7 @@ while running:
             star_y = (star_y_over * screen.get_width())
         pygame.draw.circle(screen, "white", (star_x, star_y), 3)
     screen.blit(rocket_image, rect)
-    position_stats = font.render("Position: x: " + str(int(background_offset[0])) + " y: " + str(int(background_offset[1])), True, "white")
+    position_stats = font.render("Position: x: " + str(int(background_offset[0])) + " (" + ("+" if background_offset_speed[0] > 0 else "") + str(int(background_offset_speed[0]*fps)) + ") y: " + str(int(background_offset[1])) + " (" + ("+" if background_offset_speed[1] > 0 else "") + str(int(background_offset_speed[1]*fps)) + ")", True, "white")
     position_stats_rect = position_stats.get_rect()
     position_stats_rect.topleft = (0, 0)
     screen.blit(position_stats, position_stats_rect)
