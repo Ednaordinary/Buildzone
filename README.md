@@ -19,6 +19,6 @@ uv pip install -r requirements.txt
 ## Run
 
 ```bash
-source venv/bin/activate
+source .venv/bin/activate
 python3 ./main.py
 ```
