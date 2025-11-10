@@ -3,6 +3,9 @@
 handle_uv() {
     uv venv .venv
     source .venv/bin/activate
+    if [[ $(uv pip list | grep "pygame") == "" ]]; then
+        uv pip install -r requirements.txt
+    fi
 }
 
 handle_pip() {
